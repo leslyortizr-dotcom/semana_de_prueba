@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Industrial: Planta de Leche en Polvo por Áreas - Semana 11</title>
+    <style>
+        :root {
+            --bg: #090e17;
+            --panel: #111827;
+            --card: #1f2937;
+            --border: #374151;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --accent: #38bdf8;
+            --gold: #fbbf24;
+            --green: #10b981;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+        }
+        .app-wrapper {
+            max-width: 1280px;
+            width: 100%;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.65);
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .title-block h1 {
+            margin: 0;
+            font-size: 22px;
+            color: var(--accent);
+        }
+        .title-block p {
+            margin: 3px 0 0 0;
+            font-size: 13px;
+            color: var(--muted);
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .tool-btn, select {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tool-btn:hover { border-color: var(--accent); }
+        .tool-btn.active {
+            background: #0284c7;
+            border-color: #38bdf8;
+            color: white;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 410px;
+            gap: 18px;
+        }
+        @media (max-width: 1024px) {
+            .layout-grid { grid-template-columns: 1fr; }
+        }
+
+        .map-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .canvas-box {
+            position: relative;
+            background: #060a11;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        canvas#layoutCanvas {
+            display: block;
+            width: 100%;
+            height: 540px;
+            cursor: pointer;
+        }
+        .legend-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: var(--card);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+        }
+        .legend-group {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+        /* Panel Lateral de Inspección de Área */
+        .inspector-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .zone-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .zone-badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .zone-header h2 {
+            margin: 0;
+            font-size: 19px;
+            color: var(--gold);
+        }
+        .info-section {
+            background: #111827;
+            border: 1px solid #283548;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .info-section h4 {
+            margin: 0 0 6px 0;
+            font-size: 12.5px;
+            text-transform: uppercase;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+        }
+        .info-section ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+        .info-section li { margin-bottom: 4px; }
+        .flow-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .flow-stat {
+            background: #090e17;
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .flow-stat span {
+            display: block;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .flow-stat strong {
+            font-size: 15px;
+            color: var(--green);
+        }
+        .area-nav {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        .nav-pill {
+            background: #111827;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 6px;
+            font-size: 11.5px;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .nav-pill.active {
+            background: var(--accent);
+            color: #090e17;
+            border-color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <a href="index.html" style="display: inline-flex; align-items: center; gap: 6px; background: #334155; color: #f8fafc; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; border: 1px solid #475569; margin-bottom: 14px; transition: 0.2s;">⬅ Volver al Menú Principal</a>
+
+    <!-- Barra Superior -->
+    <div class="top-bar">
+        <div class="title-block">
+            <h1>🗺️ LAYOUT INTERACTIVO DE PLANTA DE LECHE EN POLVO POR ÁREAS</h1>
+            <p>Haz clic en cualquier sala del plano para inspeccionar sus equipos, flujos de tubería, controles de calidad (WPNI / a<sub>w</sub> / T<sub>g</sub>) y normas sanitarias</p>
+        </div>
+        <div class="toolbar">
+            <label style="font-size:13px; color:#9ca3af; font-weight:600;">Capacidad Instalada:</label>
+            <select id="capacity-select" onchange="updateCapacity()">
+                <option value="2000">Planta Piloto / Semi-industrial (2,000 kg/día)</option>
+                <option value="10000" selected>Planta Modelo CECyBOOK (10,000 kg/día)</option>
+                <option value="50000">Planta Industrial Gran Escala (50,000 kg/día)</option>
+            </select>
+            <button id="btn-hygiene" class="tool-btn" onclick="toggleHygieneZones()">
+                🛡️ Ver Zonificación Sanitaria (BPM)
+            </button>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <!-- Plano de la Planta (Canvas) -->
+        <div class="map-container">
+            <div class="canvas-box">
+                <canvas id="layoutCanvas" width="800" height="540"></canvas>
+            </div>
+            <div class="legend-bar">
+                <div class="legend-group">
+                    <strong>Flujo en Tuberías:</strong>
+                    <div class="legend-item"><span class="dot" style="background:#ffffff;"></span> Leche Fluida (12.5% ST)</div>
+                    <div class="legend-item"><span class="dot" style="background:#fde047;"></span> Concentrado (50% ST)</div>
+                    <div class="legend-item"><span class="dot" style="background:#f59e0b;"></span> Polvo Seco (96% ST)</div>
+                    <div class="legend-item"><span class="dot" style="background:#a855f7;"></span> Retorno de Finos</div>
+                    <div class="legend-item"><span class="dot" style="background:#38bdf8;"></span> Condensado (Vaho) / CIP</div>
+                </div>
+                <div class="legend-group">
+                    <strong>Higiene:</strong>
+                    <div class="legend-item"><span class="dot" style="background:#ef4444;"></span> Zona Gris (Recepción/CIP)</div>
+                    <div class="legend-item"><span class="dot" style="background:#f59e0b;"></span> Zona Húmeda</div>
+                    <div class="legend-item"><span class="dot" style="background:#10b981;"></span> Zona Blanca Seca (HR &lt;50%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Inspector Técnico del Área Seleccionada -->
+        <div class="inspector-card">
+            <div class="area-nav" id="quick-nav"></div>
+
+            <div class="zone-header">
+                <span id="ins-badge" class="zone-badge">ZONA GRIS — EXTERIOR</span>
+                <h2 id="ins-title">1. Recepción y Silos de Leche Cruda</h2>
+            </div>
+
+            <div class="flow-box">
+                <div class="flow-stat">
+                    <span id="stat1-lbl">Balance de Flujo Diario</span>
+                    <strong id="stat1-val">10,000 kg/día</strong>
+                </div>
+                <div class="flow-stat">
+                    <span id="stat2-lbl">Condición Operativa</span>
+                    <strong id="stat2-val" style="color:#38bdf8;">≤ 4.0 °C | 12.5% ST</strong>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h4>🔧 Equipos Principales en esta Área</h4>
+                <ul id="ins-equip"></ul>
+            </div>
+
+            <div class="info-section">
+                <h4>🔬 Control de Proceso y Laboratorio (PCC)</h4>
+                <ul id="ins-control"></ul>
+            </div>
+
+            <div class="info-section" style="border-left: 3px solid var(--gold);">
+                <h4>📐 Diseño Sanitario e Ingeniería (NOM-222 / NOM-243)</h4>
+                <div id="ins-design"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('layoutCanvas');
+const ctx = canvas.getContext('2d');
+
+let dailyKg = 10000;
+let showHygiene = false;
+let selectedAreaId = 1;
+let particles = [];
+
+// Definición de las 8 Áreas Operativas de la Planta de Leche en Polvo (Semana 11)
+const PLANT_AREAS = [
+    {
+        id: 1,
+        code: "ÁREA 1",
+        name: "1. Recepción, Enfriamiento y Silos de Leche Cruda",
+        short: "1. Recepción",
+        x: 25, y: 35, w: 225, h: 145,
+        hygiene: "ZONA GRIS (RECEPCIÓN / EXTERIOR)",
+        hygieneColor: "#ef4444",
+        roomColor: "#1e293b",
+        temp: "≤ 4 °C (12.5% ST | aw 0.99)",
+        flowFactor: 1.0,
+        flowUnit: "kg de Leche Fluida (12.5% ST)",
+        equipment: [
+            "Medidor de flujo másico con desaireador sanitario y filtro en línea.",
+            "Enfriador de placas de recepción para asegurar temperatura ≤ 4 °C.",
+            "Silos verticales isotérmicos con agitación suave para almacenar la leche antes de clarificar.",
+            "Ventanilla de muestreo rápido para plataforma de recepción."
+        ],
+        controls: [
+            "Temperatura de recepción ≤ 4 °C, acidez titulable (14–17 °D) y pH (6.6–6.8).",
+            "Prueba de estabilidad al alcohol (mín. 72% v/v) positiva para resistir evaporación.",
+            "CERO residuos de antibióticos o inhibidores: 'Un secador no corrige leche deteriorada'."
+        ],
+        design: "Andén techado aislado físicamente de las salas de secado para impedir el ingreso de polvo exterior, humedad o contaminantes hacia el interior de la planta."
+    },
+    {
+        id: 2,
+        code: "ÁREA 2",
+        name: "2. Clarificación, Estandarización y Tratamiento Térmico (WPNI)",
+        short: "2. Past. / WPNI",
+        x: 280, y: 35, w: 235, h: 145,
+        hygiene: "ZONA INTERMEDIA (PROCESO HÚMEDO)",
+        hygieneColor: "#f59e0b",
+        roomColor: "#1e293b",
+        temp: "72 °C a 125 °C (Según WPNI)",
+        flowFactor: 1.0,
+        flowUnit: "kg Leche Estandarizada",
+        equipment: [
+            "Clarificadora centrífuga (retira leucocitos e impurezas) y estandarizadora automática Grasa/SNG.",
+            "Intercambiador de calor de placas HTST con válvula diversora de flujo.",
+            "Sistema de precalentamiento directo/indirecto para definir el índice WPNI."
+        ],
+        controls: [
+            "Estandarización de relación Grasa/SNG según destino: Entera (26–42% grasa final) o Descremada (≤1.5%).",
+            "Control del índice WPNI: Low Heat (72°C/15s, ≥6.0 mg/g), Medium Heat (85–95°C, 1.51–5.99 mg/g) o High Heat (100–140°C, ≤1.50 mg/g).",
+            "Destrucción de patógenos e inactivación de lipasas."
+        ],
+        design: "Ubicada en la Zona Húmeda de proceso líquido. Tuberías sanitarias AISI 316L con regeneración térmica para reducir el consumo de vapor antes de pasar al evaporador."
+    },
+    {
+        id: 3,
+        code: "ÁREA 3",
+        name: "3. Evaporación al Vacío y Homogeneización del Concentrado",
+        short: "3. Evaporador",
+        x: 545, y: 35, w: 230, h: 145,
+        hygiene: "ZONA INTERMEDIA (CONCENTRACIÓN)",
+        hygieneColor: "#f59e0b",
+        roomColor: "#1e293b",
+        temp: "55–65 °C Vacío | 10–25 MPa",
+        flowFactor: 0.25,
+        flowUnit: "kg Concentrado al 50% ST",
+        equipment: [
+            "Evaporador de película descendente de múltiple efecto al vacío (extrae el 75% de la masa inicial en forma de agua).",
+            "Condensador barométrico y bombas de vacío para hervir la leche a ~58–62 °C sin daño térmico.",
+            "Homogeneizador de alta presión de 2 etapas (15–25 MPa y 3–5 MPa) ubicado a la salida del evaporador."
+        ],
+        controls: [
+            "Sólidos Totales a la salida del evaporador: 48% a 52% ST (si entra muy diluido gasta energía en la torre; si >53% sube demasiado la viscosidad).",
+            "Presión de homogeneización (10–25 MPa a 50–70 °C) en leche entera para reducir el glóbulo graso a 0.2–1 µm.",
+            "Disminución de la grasa libre superficial para proteger contra la oxidación."
+        ],
+        design: "En el balance de 10,000 kg de leche (1,250 kg de sólidos), esta área retira 7,500 kg de agua al vacío y entrega 2,500 kg de concentrado al 50% ST hacia la torre."
+    },
+    {
+        id: 4,
+        code: "ÁREA 4",
+        name: "4. Cámara de Secado por Aspersión (Torre Spray Dryer)",
+        short: "4. Spray Dryer",
+        x: 545, y: 210, w: 230, h: 155,
+        hygiene: "ZONA BLANCA SECA (ALTA HIGIENE)",
+        hygieneColor: "#10b981",
+        roomColor: "#172554",
+        temp: "Aire Ent: 200 °C | Sal: 85 °C",
+        flowFactor: 0.1302,
+        flowUnit: "kg Polvo (Retira 1,197.9 kg H₂O)",
+        equipment: [
+            "Torre cilíndrico-cónica de secado por aspersión (Spray Dryer) en acero inoxidable.",
+            "Cabezal de atomización: Disco rotatorio centrífugo (10,000–25,000 rpm) o Boquilla de alta presión (10–25 MPa).",
+            "Calentador de aire con filtros absolutos HEPA y difusor superior de aire caliente."
+        ],
+        controls: [
+            "Temperatura de aire de entrada (180–220 °C) y aire de salida (80–100 °C).",
+            "Enfriamiento evaporativo: la gota (50–100 µm) se mantiene a ~50 °C (bulbo húmedo) secándose en 0.5–1.5 s.",
+            "Balance caudal/temperatura: si sube el caudal sin ajustar el calor, cae la T° de salida y el polvo sale húmedo (>4%)."
+        ],
+        design: "Transición a Zona Blanca Seca con aire filtrado HEPA y presión positiva. En el balance de 10,000 kg, aquí se evaporan los últimos 1,197.92 kg de agua formando partículas esféricas vítreas (10–50 µm)."
+    },
+    {
+        id: 5,
+        code: "ÁREA 5",
+        name: "5. Separación en Ciclones, Filtros de Mangas y Lecho Fluidizado",
+        short: "5. Ciclón y Lecho",
+        x: 280, y: 210, w: 235, h: 155,
+        hygiene: "ZONA BLANCA SECA (INSTANTIZACIÓN)",
+        hygieneColor: "#10b981",
+        roomColor: "#172554",
+        temp: "Enfriamiento Polvo a 20–30 °C",
+        flowFactor: 0.1302,
+        flowUnit: "kg Polvo Instantizado (96% ST)",
+        equipment: [
+            "Batería de ciclones de separación centrífuga (eficiencia > 95%) y casa de filtros de mangas para ultrafinos.",
+            "Línea neumática de reinyección de finos hacia la zona húmeda/lecho para aglomeración ('racimos porosos').",
+            "Secador/enfriador de Lecho Fluidizado vibratorio con sistema de aspersión de lecitina (en leche entera)."
+        ],
+        controls: [
+            "Diferencial de presión (ΔP) en ciclones y filtros de mangas para evitar pérdidas de polvo y caída de flujo de aire.",
+            "Humedad final ajustada a 2.5–4.0% m/m y actividad de agua aw ≤ 0.20–0.25 (monocapa BET).",
+            "PCC Crítico: Enfriar el polvo a 20–30 °C antes de envasar para mantenerlo lejos de su Tg (100–115 °C) y evitar el caking."
+        ],
+        design: "Prohibido el lavado con agua libre durante la operación (limpieza en seco / aspiración sanitaria) para mantener la Humedad Relativa ambiental < 50% y evitar Salmonella."
+    },
+    {
+        id: 6,
+        code: "ÁREA 6",
+        name: "6. Laboratorio de Control de Calidad NOM-222 y NOM-243",
+        short: "6. Laboratorio",
+        x: 25, y: 210, w: 225, h: 155,
+        hygiene: "ZONA INTERMEDIA (AUDITORÍA CALIDAD)",
+        hygieneColor: "#f59e0b",
+        roomColor: "#1e293b",
+        temp: "20 °C (HR Controlada)",
+        flowFactor: 0.002,
+        flowUnit: "Lotes Auditados / Día",
+        equipment: [
+            "Termobalanza infrarroja de humedad y medidor de actividad de agua (higrómetro de punto de rocío para aw).",
+            "Centrífuga y tubos graduados para Índice de Insolubilidad (mL) y equipo de filtración para Partículas Quemadas (Discos ADPI A, B, C, D).",
+            "Espectrofotómetro para lectura de WPNI y laboratorio microbiológico (Salmonella y coliformes)."
+        ],
+        controls: [
+            "NOM-222-SCFI/SAGARPA-2018: Humedad ≤ 4.0%, Proteína en SNG ≥ 34.0%, Insolubilidad ≤ 1.0 mL (entera) / ≤ 1.2 mL (descremada).",
+            "Partículas quemadas: Máximo Disco B (15 mg en 25 g).",
+            "NOM-243-SSA1-2010: Ausencia de Salmonella spp. en 25 g y Coliformes totales < 10 UFC/g."
+        ],
+        design: "Conecta tanto con la recepción de leche cruda como con el muestreo de polvo terminado para dictaminar la liberación de cada lote."
+    },
+    {
+        id: 7,
+        code: "ÁREA 7",
+        name: "7. Tamizado, Envasado en Atmósfera Modificada (N₂) y Almacén",
+        short: "7. Envasado N₂",
+        x: 25, y: 395, w: 490, h: 115,
+        hygiene: "ZONA BLANCA SECA (EMPAQUE FINAL)",
+        hygieneColor: "#10b981",
+        roomColor: "#172554",
+        temp: "Almacén < 25 °C y HR < 50%",
+        flowFactor: 0.1302,
+        flowUnit: "kg Polvo Envasado (96% ST)",
+        equipment: [
+            "Tamiz vibratorio clasificador (retira aglomerados gruesos y asegura granulometría uniforme) e imán/detector de metales.",
+            "Llenadora hermética de bolsas tricapa / latas o sacos de 25 kg con barrido de gas inerte Nitrógeno (N₂).",
+            "Almacén seco climatizado (HR < 50%, T < 25 °C) bajo sistema de rotación PEPS."
+        ],
+        controls: [
+            "Oxígeno residual en espacio de cabeza (< 2–3% O₂ mediante inyección de N₂ en leche entera para prevenir rancidez oxidativa).",
+            "Integridad del sello hermético y barrera total contra vapor de agua, oxígeno y luz.",
+            "Temperatura del polvo al envasar (20–30 °C) y HR del almacén < 50% para evitar transición vítrea, cristalización de α-lactosa y caking."
+        ],
+        design: "'La conservación continúa después de la torre': exclusas sanitarias de aire seco para que el polvo mantenga su matriz vítrea amorfa durante 12 a 18 meses de vida útil."
+    },
+    {
+        id: 8,
+        code: "ÁREA 8",
+        name: "8. Recuperación de Condensados (Agua Vaho), Caldera y Central CIP",
+        short: "8. Vaho y CIP",
+        x: 545, y: 395, w: 230, h: 115,
+        hygiene: "ZONA GRIS (SERVICIOS INDUSTRIALES)",
+        hygieneColor: "#ef4444",
+        roomColor: "#1e293b",
+        temp: "75 °C (CIP) | Vapor Caldera",
+        flowFactor: 0.75,
+        flowUnit: "kg Agua Evaporada (Vaho)",
+        equipment: [
+            "Tanques de recuperación de agua condensada ('agua vaho' extraída en el evaporador al vacío).",
+            "Central CIP (Clean-in-Place) automatizada (Sosa NaOH 1.5%, Ácido Nítrico HNO₃ 1.0%) para lavar Zona Húmeda y Evaporador.",
+            "Generador de vapor, compresores de aire grado alimenticio (seco y libre de aceite) y deshumidificadores."
+        ],
+        controls: [
+            "Conductividad y turbidez del agua vaho recuperada (los 7,500 kg de agua por cada 10,000 kg de leche se reutilizan en calderas y lavado CIP).",
+            "Validación de limpieza CIP en tubos de evaporador y cámara para evitar incrustaciones y partículas quemadas (> Disco B)."
+        ],
+        design: "Sustentabilidad e ingeniería circular: aprovecha los 7,500 kg de agua condensada del evaporador para alimentar los servicios térmicos y de limpieza de la propia planta."
+    }
+];
+
+// Tuberías de conexión entre áreas para animar el flujo continuo
+const PIPES = [
+    { from: 1, to: 6, color: "#ffffff", label: "Muestra Leche" },
+    { from: 1, to: 2, color: "#ffffff", label: "Leche Cruda 12.5% ST" },
+    { from: 2, to: 3, color: "#ffffff", label: "Leche Tratada WPNI" },
+    { from: 3, to: 4, color: "#fde047", label: "Concentrado 50% ST" },
+    { from: 3, to: 8, color: "#38bdf8", label: "Agua Vaho (75%)" },
+    { from: 4, to: 5, color: "#f59e0b", label: "Polvo + Aire Salida" },
+    { from: 5, to: 4, color: "#a855f7", label: "Retorno Finos" },
+    { from: 5, to: 7, color: "#10b981", label: "Polvo Frío 25°C (96% ST)" },
+    { from: 5, to: 6, color: "#fbbf24", label: "Muestra NOM-222" }
+];
+
+function initNavPills() {
+    const nav = document.getElementById('quick-nav');
+    nav.innerHTML = PLANT_AREAS.map(a =>
+        `<button id="pill-${a.id}" class="nav-pill ${a.id === selectedAreaId ? 'active' : ''}" onclick="selectArea(${a.id})">${a.short}</button>`
+    ).join('');
+}
+
+function initParticles() {
+    particles = [];
+    PIPES.forEach((p, idx) => {
+        for (let i = 0; i < 4; i++) {
+            particles.push({
+                pipeIndex: idx,
+                progress: i * 0.25
+            });
+        }
+    });
+}
+
+function toggleHygieneZones() {
+    showHygiene = !showHygiene;
+    const btn = document.getElementById('btn-hygiene');
+    btn.classList.toggle('active', showHygiene);
+}
+
+function updateCapacity() {
+    dailyKg = parseInt(document.getElementById('capacity-select').value);
+    selectArea(selectedAreaId);
+}
+
+function selectArea(id) {
+    selectedAreaId = id;
+    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('pill-' + id).classList.add('active');
+
+    const area = PLANT_AREAS.find(a => a.id === id);
+    const badge = document.getElementById('ins-badge');
+    badge.innerText = area.hygiene;
+    badge.style.backgroundColor = area.hygieneColor + '25';
+    badge.style.color = area.hygieneColor;
+    badge.style.border = `1px solid ${area.hygieneColor}`;
+
+    document.getElementById('ins-title').innerText = area.name;
+
+    let flowVal = (dailyKg * area.flowFactor);
+    if (area.id === 6) {
+        flowVal = Math.max(2, Math.round(dailyKg / 2500)) + " lotes auditados/día";
+    } else if (area.flowFactor === 0.1302) {
+        flowVal = flowVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + area.flowUnit;
+    } else {
+        flowVal = Math.round(flowVal).toLocaleString('en-US') + " " + area.flowUnit;
+    }
+
+    document.getElementById('stat1-lbl').innerText = "Balance de Materia Diario";
+    document.getElementById('stat1-val').innerText = flowVal;
+    document.getElementById('stat2-val').innerText = area.temp;
+
+    document.getElementById('ins-equip').innerHTML = area.equipment.map(e => `<li>${e}</li>`).join('');
+    document.getElementById('ins-control').innerHTML = area.controls.map(c => `<li>${c}</li>`).join('');
+    document.getElementById('ins-design').innerHTML = area.design;
+}
+
+// Detectar clic sobre las salas en el plano
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    for (let area of PLANT_AREAS) {
+        if (mx >= area.x && mx <= area.x + area.w && my >= area.y && my <= area.y + area.h) {
+            selectArea(area.id);
+            break;
+        }
+    }
+});
+
+function getCenter(areaId) {
+    const a = PLANT_AREAS.find(x => x.id === areaId);
+    return { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+}
+
+function drawEquipmentIcons(area) {
+    ctx.save();
+    ctx.translate(area.x, area.y);
+    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = 1.5;
+
+    if (area.id === 1) {
+        // Silos verticales isotérmicos
+        ctx.beginPath();
+        ctx.arc(60, 95, 25, 0, Math.PI * 2);
+        ctx.arc(135, 95, 25, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "10px sans-serif";
+        ctx.fillText("Silo 1 (4°C)", 36, 98);
+        ctx.fillText("Silo 2 (4°C)", 111, 98);
+    } else if (area.id === 2) {
+        // Clarificadora centrífuga + Pasteurizador WPNI
+        ctx.beginPath();
+        ctx.arc(55, 95, 22, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.fillRect(105, 74, 95, 42);
+        ctx.strokeRect(105, 74, 95, 42);
+        ctx.fillStyle = "#fde047";
+        ctx.font = "10px sans-serif";
+        ctx.fillText("Clarific.", 37, 98);
+        ctx.fillText("Placas WPNI", 122, 98);
+    } else if (area.id === 3) {
+        // Efectos del Evaporador al Vacío + Homogeneizador
+        for (let i = 0; i < 3; i++) {
+            ctx.fillRect(28 + i * 32, 65, 22, 62);
+            ctx.strokeRect(28 + i * 32, 65, 22, 62);
+        }
+        ctx.fillRect(135, 80, 72, 42);
+        ctx.strokeRect(135, 80, 72, 42);
+        ctx.fillStyle = "#7dd3fc";
+        ctx.font = "9.5px sans-serif";
+        ctx.fillText("Evap. Vacío", 32, 138);
+        ctx.fillStyle = "#fde047";
+        ctx.fillText("Homog. 20MPa", 139, 105);
+    } else if (area.id === 4) {
+        // Torre Cilíndrico-Cónica Spray Dryer
+        ctx.fillStyle = "rgba(245, 158, 11, 0.16)";
+        ctx.strokeStyle = "#f59e0b";
+        ctx.beginPath();
+        ctx.moveTo(65, 62);
+        ctx.lineTo(165, 62);
+        ctx.lineTo(165, 105);
+        ctx.lineTo(115, 142);
+        ctx.lineTo(65, 105);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#fde047";
+        ctx.font = "10px sans-serif";
+        ctx.fillText("Cámara Spray Dryer", 70, 96);
+    } else if (area.id === 5) {
+        // Ciclones + Filtros de Mangas + Lecho Fluidizado
+        ctx.beginPath();
+        ctx.moveTo(30, 66);
+        ctx.lineTo(76, 66);
+        ctx.lineTo(53, 125);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = "rgba(16, 185, 129, 0.2)";
+        ctx.fillRect(95, 78, 118, 45);
+        ctx.strokeRect(95, 78, 118, 45);
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "9.5px sans-serif";
+        ctx.fillText("Ciclón >95%", 25, 138);
+        ctx.fillStyle = "#34d399";
+        ctx.fillText("Lecho Fluidizado 25°C", 104, 104);
+    } else if (area.id === 6) {
+        // Equipos de Laboratorio NOM-222
+        ctx.fillRect(30, 74, 75, 45);
+        ctx.strokeRect(30, 74, 75, 45);
+        ctx.fillRect(120, 74, 75, 45);
+        ctx.strokeRect(120, 74, 75, 45);
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "9.5px sans-serif";
+        ctx.fillText("Medidor aw / %H", 33, 100);
+        ctx.fillText("Disco Quemadas", 123, 100);
+    } else if (area.id === 7) {
+        // Tamiz Vibratorio + Envasadora con N2 + Racks Almacén Seco
+        ctx.beginPath();
+        ctx.arc(65, 78, 22, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.fillRect(120, 58, 135, 42);
+        ctx.strokeRect(120, 58, 135, 42);
+        ctx.fillRect(285, 58, 175, 42);
+        ctx.strokeRect(285, 58, 175, 42);
+        ctx.fillStyle = "#fde047";
+        ctx.font = "10px sans-serif";
+        ctx.fillText("Tamiz", 50, 82);
+        ctx.fillText("Envasadora Hermética N₂", 130, 83);
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillText("Almacén Seco (HR < 50%)", 312, 83);
+    } else if (area.id === 8) {
+        // Tanques Agua Vaho y Central CIP
+        for (let t = 0; t < 3; t++) {
+            ctx.beginPath();
+            ctx.arc(55 + t * 60, 80, 20, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+        }
+        ctx.fillStyle = "#7dd3fc";
+        ctx.font = "9.5px sans-serif";
+        ctx.fillText("Agua Vaho (7,500 kg) + CIP", 52, 108);
+    }
+    ctx.restore();
+}
+
+function animateLayout() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Cuadrícula arquitectónica de fondo
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+
+    // 2. Dibujar cada Sala / Área de la Planta
+    PLANT_AREAS.forEach(area => {
+        let isSelected = (area.id === selectedAreaId);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(area.x, area.y, area.w, area.h, 10);
+
+        if (showHygiene) {
+            ctx.fillStyle = area.hygieneColor + "33";
+        } else {
+            ctx.fillStyle = area.roomColor;
+        }
+        ctx.fill();
+
+        ctx.lineWidth = isSelected ? 3.5 : 1.8;
+        ctx.strokeStyle = isSelected ? "#fbbf24" : (showHygiene ? area.hygieneColor : "#475569");
+        ctx.stroke();
+
+        // Encabezado de la sala
+        ctx.fillStyle = isSelected ? "#fbbf24" : "#38bdf8";
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillText(area.code, area.x + 12, area.y + 22);
+
+        ctx.fillStyle = "#f8fafc";
+        ctx.font = "bold 12.5px sans-serif";
+        ctx.fillText(area.short.substring(3), area.x + 70, area.y + 22);
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "11px sans-serif";
+        ctx.fillText(`Condición: ${area.temp}`, area.x + 12, area.y + 42);
+
+        ctx.restore();
+
+        drawEquipmentIcons(area);
+    });
+
+    // 3. Dibujar Tuberías de Proceso entre Salas
+    PIPES.forEach((pipe, idx) => {
+        let p1 = getCenter(pipe.from);
+        let p2 = getCenter(pipe.to);
+
+        // Desplazar ligeramente la línea de retorno de finos para que se vea paralela
+        let offsetY = (idx === 6) ? -14 : 0;
+
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.32)";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y + offsetY);
+        ctx.lineTo(p2.x, p2.y + offsetY);
+        ctx.stroke();
+    });
+
+    // 4. Animar Partículas de Flujo en las Tuberías
+    particles.forEach(pt => {
+        pt.progress += 0.005;
+        if (pt.progress > 1) pt.progress = 0;
+
+        let pipe = PIPES[pt.pipeIndex];
+        let p1 = getCenter(pipe.from);
+        let p2 = getCenter(pipe.to);
+        let offsetY = (pt.pipeIndex === 6) ? -14 : 0;
+
+        let px = p1.x + (p2.x - p1.x) * pt.progress;
+        let py = (p1.y + offsetY) + (p2.y - p1.y) * pt.progress;
+
+        ctx.fillStyle = pipe.color;
+        ctx.beginPath();
+        ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(animateLayout);
+}
+
+initNavPills();
+initParticles();
+selectArea(1);
+animateLayout();
+</script>
+
+</body>
+</html>
